@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0a0d12">
+  <meta name="color-scheme" content="dark">
+  <title>MemoDigits · Launching soon!</title>
+  <meta name="description" content="MemoDigits is launching soon!">
+  <link rel="canonical" href="https://memodigits.com/">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230a0d12'/%3E%3Ctext x='16' y='24' font-size='22' text-anchor='middle' fill='%235ee38b' font-family='monospace'%3E%CF%80%3C/text%3E%3C/svg%3E">
+  <style>
+    :root { color-scheme: dark; --bg: #0a0d12; --fg: #eef1f7; --muted: #8a92a3; --accent: #9cbcff; }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      display: grid; place-items: center; padding: 24px; text-align: center; overflow: hidden;
+      background:
+        radial-gradient(ellipse 55% 34% at 50% 47%, rgba(156, 188, 255, .08), rgba(156, 188, 255, 0) 70%),
+        radial-gradient(ellipse 90% 60% at 50% 48%, #121722 0%, var(--bg) 90%) no-repeat,
+        var(--bg);
+      color: var(--fg);
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    .pi {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: clamp(56px, 14vw, 96px); font-weight: 200; line-height: 1; color: #5ee38b;
+      text-shadow: 0 0 28px rgba(94, 227, 139, .25);
+    }
+    h1 {
+      margin: 20px 0 10px; min-height: 1.3em; font-size: clamp(32px, 7vw, 52px); font-weight: 200;
+      line-height: 1.3; letter-spacing: -.01em;
+    }
+    .txt {
+      background: linear-gradient(180deg, #fff 30%, #8ea3cc);
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+    }
+    .cursor {
+      display: inline-block; width: 2px; height: 1em; margin-left: 6px; vertical-align: -.12em;
+      background: var(--accent); box-shadow: 0 0 14px rgba(156, 188, 255, .35);
+      animation: blink 1s steps(1, end) infinite;
+    }
+    .cursor.busy { animation: none; }
+    @keyframes blink { 50% { opacity: 0; } }
+    p { margin: 0; color: var(--muted); font-size: 15px; letter-spacing: .02em; }
+    .sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+    @media (prefers-reduced-motion: reduce) { .cursor { animation: none; } }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="pi" aria-hidden="true">π</div>
+    <h1>
+      <span class="sr-only">Launching soon!</span>
+      <span aria-hidden="true"><span class="txt" id="txt" lang="en">Launching soon!</span><span class="cursor" id="cursor"></span></span>
+    </h1>
+    <p>MemoDigits</p>
+  </main>
+
+  <script>
+  (function () {
+    'use strict';
+    var MSG = [
+      ['en', 'Launching soon!'],
+      ['es', '¡Próximamente!'],
+      ['de', 'Bald verfügbar!'],
+      ['fr', 'Bientôt disponible !'],
+      ['ru', 'Скоро запуск!'],
+      ['it', 'Prossimamente!'],
+      ['pt', 'Em breve!'],
+      ['pl', 'Wkrótce start!'],
+      ['nl', 'Binnenkort live!'],
+      ['ja', 'まもなく公開！'],
+      ['ko', '곧 출시됩니다!'],
+      ['cs', 'Již brzy!'],
+      ['hu', 'Hamarosan indulunk!'],
+      ['ro', 'În curând!']
+    ];
+    var TYPE = 75, ERASE = 35, HOLD = 1900, GAP = 350;
+
+    var txt = document.getElementById('txt');
+    var cursor = document.getElementById('cursor');
+    var still = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // Random order without repeats until every language has been shown.
+    var bag = [], last = 0;
+    function nextIndex() {
+      if (!bag.length) {
+        bag = MSG.map(function (_, i) { return i; }).filter(function (i) { return i !== last; });
+        for (var i = bag.length - 1; i > 0; i--) {
+          var j = Math.floor(Math.random() * (i + 1));
+          var t = bag[i]; bag[i] = bag[j]; bag[j] = t;
+        }
+      }
+      last = bag.pop();
+      return last;
+    }
+
+    function busy(on) { cursor.classList.toggle('busy', on); }
+    function wait(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+
+    async function erase() {
+      var chars = Array.from(txt.textContent);
+      busy(true);
+      while (chars.length) {
+        chars.pop();
+        txt.textContent = chars.join('');
+        await wait(ERASE);
+      }
+      busy(false);
+    }
+
+    async function write(text) {
+      var chars = Array.from(text), out = '';
+      busy(true);
+      for (var i = 0; i < chars.length; i++) {
+        out += chars[i];
+        txt.textContent = out;
+        await wait(TYPE);
+      }
+      busy(false);
+    }
+
+    async function loop() {
+      await wait(HOLD + 600);
+      for (;;) {
+        var m = MSG[nextIndex()];
+        if (still) {
+          txt.lang = m[0];
+          txt.textContent = m[1];
+        } else {
+          await erase();
+          await wait(GAP);
+          txt.lang = m[0];
+          await write(m[1]);
+        }
+        await wait(HOLD);
+      }
+    }
+
+    loop();
+  })();
+  </script>
+</body>
+</html>
